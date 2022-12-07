@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+
+  authservice:
+    image: bjornsen016/authservice
+    restart: always
+    ports:
+      - 3000:80
+
+  inventoryservice:
+    image: bjornsen016/inventory
+    restart: always
+    ports:
+      - 3001:80
+      - 3005:123
+
+  paymentservice:
+    image: bjornsen016/payment
+    restart: always
+    ports:
+      - 3002:80

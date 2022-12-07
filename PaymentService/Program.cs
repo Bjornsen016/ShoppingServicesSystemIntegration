@@ -11,10 +11,11 @@ using PaymentService.Protos;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<PaymentContext>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<PaymentContext>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("AZURE")));
 
-builder.Services.AddHttpClient<InventoryClient>(client => {
-    client.BaseAddress = new Uri("http://inventoryservice");
+builder.Services.AddHttpClient<InventoryClient>(client =>
+{
+    client.BaseAddress = new Uri("http://inventory");
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
@@ -50,29 +51,33 @@ using (var scope = app.Services.CreateScope())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapPost("/payment/{productId}", async (string productId, PaymentContext db, InventoryClient inventoryClient, HttpContext http) => {
+app.MapPost("/payment/{productId}", async (string productId, PaymentContext db, InventoryClient inventoryClient, HttpContext http) =>
+{
 
     // Vanlig HTTP GET Anrop
     //var product = await inventoryClient.GetProductAsync(productId);
 
     using var channel = GrpcChannel.ForAddress("http://inventoryservice");
     var client = new GetProductService.GetProductServiceClient(channel);
-    
+
     // gRPC Anrop
 
-    var productRequest = new ProductRequest {
-        ProductId=productId
+    var productRequest = new ProductRequest
+    {
+        ProductId = productId
     };
 
     var product = await client.GetProductAsync(productRequest);
 
-    if (product == null) {
+    if (product == null)
+    {
         return Results.NotFound("Product was not found!");
     }
 
     var userId = http.User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier).Value;
 
-    if (userId == null) {
+    if (userId == null)
+    {
         return Results.BadRequest("Bad token!");
     }
 
